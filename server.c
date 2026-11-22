@@ -33,7 +33,7 @@ int main(void) {
         close(server_fd);
         return 1;
     }
-    printf("waiting client\n");
+    printf("waiting for client...\n");
 
     int client_fd = accept(server_fd, NULL, NULL);
     if (client_fd < 0) {
@@ -43,14 +43,35 @@ int main(void) {
     }
     printf("client connected\n");
 
-    char buffer[1024] = {0};
-    ssize_t n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (n > 0) {
-        printf("client says: %s\n", buffer);
-    }
+    char buffer[1024];
+    char reply[1024];
 
-    char *reply = "Hello from server!";
-    send(client_fd, reply, strlen(reply), 0);
+    while (1) {
+        // ---- OUTPUT (receive from client) ----
+        memset(buffer, 0, sizeof(buffer));
+        ssize_t n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) {
+            printf("client disconnected\n");
+            break;
+        }
+        printf("client: %s\n", buffer);
+
+        // ---- INPUT (type a reply) ----
+        // keep asking until the reply is not empty
+        do {
+            printf("you: ");
+            fflush(stdout);
+            if (fgets(reply, sizeof(reply), stdin) == NULL) {
+                reply[0] = '\0';
+                break;
+            }
+            reply[strcspn(reply, "\n")] = 0;   // strip newline
+        } while (strlen(reply) == 0);
+
+        if (strlen(reply) == 0) break;          // stdin closed (Ctrl+D)
+
+        send(client_fd, reply, strlen(reply), 0);
+    }
 
     close(client_fd);
     close(server_fd);

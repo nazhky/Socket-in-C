@@ -23,15 +23,24 @@ int main(void){
         close(sock);
         return 1;
     }
+    while (1)  {
     // 4. send a message
-    char *msg = "i love you kue";
-    send(sock, msg, strlen(msg), 0);
+        char msg[1024];
+        printf("you: ");
+        fflush(stdout);
+        if (fgets(msg, sizeof(msg), stdin) == NULL) break;
+        msg[strcspn(msg, "\n")] = 0;
+        
+        if (strlen(msg) == 0) continue; // skip empty messagges
+        if (strcmp(msg, "quit") == 0) break;
 
-    char buffer[1024] = {0};
-    ssize_t n = recv(sock, buffer, sizeof(buffer) - 1, 0);
-    if (n > 0){
-        printf("server says: %s\n", buffer);
+        send(sock, msg, strlen(msg), 0);
+    // output
+        char buffer[1024] = {0};
+        ssize_t n = recv(sock, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) { printf("server disconnected\n "); break; }
+        printf("server: %s\n", buffer);
     }
-    close(sock);
-    return 0;
+        close(sock);
+        return 0;
 }
